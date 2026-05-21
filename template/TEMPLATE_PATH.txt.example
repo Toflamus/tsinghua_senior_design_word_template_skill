@@ -1,0 +1,11 @@
+# tsinghua-thesis-template — local template path
+#
+# Copy this file to TEMPLATE_PATH.txt (in the same folder) and put the absolute
+# path to your local copy of the 清华大学综合论文训练论文模板.docx on the first
+# non-comment line below. Tilde (~) is expanded.
+#
+# Example:
+# ~/Documents/01 综合论文训练论文模板.docx
+#
+# Lines starting with # are ignored.
+

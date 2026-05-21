@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Generated thesis outputs from examples / tests
+*.docx
+!template/*.docx     # (kept just in case; the .docx is gitignored above already)
+_placeholder.png
+
+# Local template path config — user-specific
+template/TEMPLATE_PATH.txt
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

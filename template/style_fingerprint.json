@@ -1,0 +1,784 @@
+{
+  "template_filename": "01 综合论文训练论文模板.docx",
+  "template_source": "清华大学教务处",
+  "fingerprint_generated_by": "tsinghua-thesis-template/scripts (initial)",
+  "style_count": 194,
+  "styles": [
+    {
+      "name": "Balloon Text",
+      "type": "paragraph"
+    },
+    {
+      "name": "Bibliography",
+      "type": "paragraph"
+    },
+    {
+      "name": "Block Text",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text First Indent",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text First Indent 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text Indent",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text Indent 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "Body Text Indent 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "Book Title",
+      "type": "character"
+    },
+    {
+      "name": "Caption",
+      "type": "paragraph"
+    },
+    {
+      "name": "Closing",
+      "type": "paragraph"
+    },
+    {
+      "name": "Date",
+      "type": "paragraph"
+    },
+    {
+      "name": "Default Paragraph Font",
+      "type": "character"
+    },
+    {
+      "name": "Document Map",
+      "type": "paragraph"
+    },
+    {
+      "name": "E-mail Signature",
+      "type": "paragraph"
+    },
+    {
+      "name": "Emphasis",
+      "type": "character"
+    },
+    {
+      "name": "FollowedHyperlink",
+      "type": "character"
+    },
+    {
+      "name": "Footer",
+      "type": "paragraph"
+    },
+    {
+      "name": "Grid Table Light",
+      "type": "table"
+    },
+    {
+      "name": "HTML Address",
+      "type": "paragraph"
+    },
+    {
+      "name": "HTML Preformatted",
+      "type": "paragraph"
+    },
+    {
+      "name": "HTML 地址 字符",
+      "type": "character"
+    },
+    {
+      "name": "HTML 预设格式 字符",
+      "type": "character"
+    },
+    {
+      "name": "Header",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 1",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 4",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 5",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 6",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 7",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 8",
+      "type": "paragraph"
+    },
+    {
+      "name": "Heading 9",
+      "type": "paragraph"
+    },
+    {
+      "name": "Hyperlink",
+      "type": "character"
+    },
+    {
+      "name": "Intense Quote",
+      "type": "paragraph"
+    },
+    {
+      "name": "List",
+      "type": "paragraph"
+    },
+    {
+      "name": "List 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "List 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "List 4",
+      "type": "paragraph"
+    },
+    {
+      "name": "List 5",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Bullet",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Bullet 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Bullet 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Bullet 4",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Bullet 5",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Continue",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Continue 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Continue 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Continue 4",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Continue 5",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Number",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Number 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Number 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Number 4",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Number 5",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Paragraph",
+      "type": "paragraph"
+    },
+    {
+      "name": "List Table 6 Colorful",
+      "type": "table"
+    },
+    {
+      "name": "Message Header",
+      "type": "paragraph"
+    },
+    {
+      "name": "No List",
+      "type": "list"
+    },
+    {
+      "name": "Normal",
+      "type": "paragraph"
+    },
+    {
+      "name": "Normal (Web)",
+      "type": "paragraph"
+    },
+    {
+      "name": "Normal Indent",
+      "type": "paragraph"
+    },
+    {
+      "name": "Normal Table",
+      "type": "table"
+    },
+    {
+      "name": "Note Heading",
+      "type": "paragraph"
+    },
+    {
+      "name": "Placeholder Text",
+      "type": "character"
+    },
+    {
+      "name": "Plain Table 2",
+      "type": "table"
+    },
+    {
+      "name": "Plain Text",
+      "type": "paragraph"
+    },
+    {
+      "name": "Quote",
+      "type": "paragraph"
+    },
+    {
+      "name": "Salutation",
+      "type": "paragraph"
+    },
+    {
+      "name": "Signature",
+      "type": "paragraph"
+    },
+    {
+      "name": "Strong",
+      "type": "character"
+    },
+    {
+      "name": "Subtitle",
+      "type": "paragraph"
+    },
+    {
+      "name": "TOC 1 字符",
+      "type": "character"
+    },
+    {
+      "name": "TOC Heading",
+      "type": "paragraph"
+    },
+    {
+      "name": "Table Grid",
+      "type": "table"
+    },
+    {
+      "name": "Title",
+      "type": "paragraph"
+    },
+    {
+      "name": "Unresolved Mention",
+      "type": "character"
+    },
+    {
+      "name": "annotation reference",
+      "type": "character"
+    },
+    {
+      "name": "annotation subject",
+      "type": "paragraph"
+    },
+    {
+      "name": "annotation text",
+      "type": "paragraph"
+    },
+    {
+      "name": "endnote reference",
+      "type": "character"
+    },
+    {
+      "name": "endnote text",
+      "type": "paragraph"
+    },
+    {
+      "name": "envelope address",
+      "type": "paragraph"
+    },
+    {
+      "name": "envelope return",
+      "type": "paragraph"
+    },
+    {
+      "name": "fontstyle01",
+      "type": "character"
+    },
+    {
+      "name": "fontstyle21",
+      "type": "character"
+    },
+    {
+      "name": "footnote reference",
+      "type": "character"
+    },
+    {
+      "name": "footnote text",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 1",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 4",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 5",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 6",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 7",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 8",
+      "type": "paragraph"
+    },
+    {
+      "name": "index 9",
+      "type": "paragraph"
+    },
+    {
+      "name": "index heading",
+      "type": "paragraph"
+    },
+    {
+      "name": "macro",
+      "type": "paragraph"
+    },
+    {
+      "name": "table of authorities",
+      "type": "paragraph"
+    },
+    {
+      "name": "table of figures",
+      "type": "paragraph"
+    },
+    {
+      "name": "toa heading",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 1",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 4",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 5",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 6",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 7",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 8",
+      "type": "paragraph"
+    },
+    {
+      "name": "toc 9",
+      "type": "paragraph"
+    },
+    {
+      "name": "三线表",
+      "type": "table"
+    },
+    {
+      "name": "书脊",
+      "type": "paragraph"
+    },
+    {
+      "name": "使用授权说明标题",
+      "type": "paragraph"
+    },
+    {
+      "name": "信息标题 字符",
+      "type": "character"
+    },
+    {
+      "name": "公式",
+      "type": "paragraph"
+    },
+    {
+      "name": "公式 字符",
+      "type": "character"
+    },
+    {
+      "name": "列表段落 字符",
+      "type": "character"
+    },
+    {
+      "name": "副标题 字符",
+      "type": "character"
+    },
+    {
+      "name": "参考文献",
+      "type": "paragraph"
+    },
+    {
+      "name": "图片",
+      "type": "paragraph"
+    },
+    {
+      "name": "图片 字符",
+      "type": "character"
+    },
+    {
+      "name": "宏文本 字符",
+      "type": "character"
+    },
+    {
+      "name": "封面作者信息",
+      "type": "paragraph"
+    },
+    {
+      "name": "封面清华大学",
+      "type": "paragraph"
+    },
+    {
+      "name": "封面综合论文训练",
+      "type": "paragraph"
+    },
+    {
+      "name": "封面论文题目",
+      "type": "paragraph"
+    },
+    {
+      "name": "封面题目",
+      "type": "paragraph"
+    },
+    {
+      "name": "封面题目 字符",
+      "type": "character"
+    },
+    {
+      "name": "尾注文本 字符",
+      "type": "character"
+    },
+    {
+      "name": "引用 字符",
+      "type": "character"
+    },
+    {
+      "name": "当前列表1",
+      "type": "list"
+    },
+    {
+      "name": "批注主题 字符",
+      "type": "character"
+    },
+    {
+      "name": "批注文字 字符",
+      "type": "character"
+    },
+    {
+      "name": "批注框文本 字符",
+      "type": "character"
+    },
+    {
+      "name": "文档结构图 字符",
+      "type": "character"
+    },
+    {
+      "name": "日期 字符",
+      "type": "character"
+    },
+    {
+      "name": "明显引用 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 1 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 2 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 3 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 4 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 5 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 6 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 7 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 8 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 9 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题-插图表格清单&符号缩略语说明",
+      "type": "paragraph"
+    },
+    {
+      "name": "标题-插图表格清单&符号缩略语说明 字符",
+      "type": "character"
+    },
+    {
+      "name": "标题1",
+      "type": "paragraph"
+    },
+    {
+      "name": "样式1",
+      "type": "paragraph"
+    },
+    {
+      "name": "样式1 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本 2 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本 3 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本缩进 2 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本缩进 3 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本缩进 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本首行缩进 2 字符",
+      "type": "character"
+    },
+    {
+      "name": "正文文本首行缩进 字符",
+      "type": "character"
+    },
+    {
+      "name": "段落",
+      "type": "paragraph"
+    },
+    {
+      "name": "注释标题 字符",
+      "type": "character"
+    },
+    {
+      "name": "电子邮件签名 字符",
+      "type": "character"
+    },
+    {
+      "name": "称呼 字符",
+      "type": "character"
+    },
+    {
+      "name": "章标题-无级别",
+      "type": "paragraph"
+    },
+    {
+      "name": "章标题-无级别 字符",
+      "type": "character"
+    },
+    {
+      "name": "符号和缩略语说明表",
+      "type": "paragraph"
+    },
+    {
+      "name": "签名 字符",
+      "type": "character"
+    },
+    {
+      "name": "纯文本 字符",
+      "type": "character"
+    },
+    {
+      "name": "结束语 字符",
+      "type": "character"
+    },
+    {
+      "name": "网格型1",
+      "type": "table"
+    },
+    {
+      "name": "脚注文本 字符",
+      "type": "character"
+    },
+    {
+      "name": "行内代码",
+      "type": "character"
+    },
+    {
+      "name": "行间代码",
+      "type": "paragraph"
+    },
+    {
+      "name": "行间代码 字符",
+      "type": "character"
+    },
+    {
+      "name": "表-题注",
+      "type": "paragraph"
+    },
+    {
+      "name": "表-题注 字符",
+      "type": "character"
+    },
+    {
+      "name": "表单元格内文字",
+      "type": "paragraph"
+    },
+    {
+      "name": "表单元格内文字 字符",
+      "type": "character"
+    },
+    {
+      "name": "论文正文段落",
+      "type": "paragraph"
+    },
+    {
+      "name": "论文正文段落 字符",
+      "type": "character"
+    },
+    {
+      "name": "附录标题",
+      "type": "paragraph"
+    },
+    {
+      "name": "附录标题 1",
+      "type": "paragraph"
+    },
+    {
+      "name": "附录标题 2",
+      "type": "paragraph"
+    },
+    {
+      "name": "附录标题 3",
+      "type": "paragraph"
+    },
+    {
+      "name": "隐藏文字",
+      "type": "paragraph"
+    },
+    {
+      "name": "隐藏文字 字符",
+      "type": "character"
+    },
+    {
+      "name": "页眉 字符",
+      "type": "character"
+    },
+    {
+      "name": "页脚 字符",
+      "type": "character"
+    },
+    {
+      "name": "题注 字符",
+      "type": "character"
+    }
+  ]
+}
