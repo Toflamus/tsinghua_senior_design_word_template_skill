@@ -35,6 +35,8 @@ from ._xml import (
     remove_paragraph,
     set_table_cell_text,
     append_omml,
+    add_field_run,
+    enable_update_fields_on_open,
 )
 
 
@@ -89,7 +91,12 @@ def open_template(template_path: Optional[Path] = None) -> Document:
 
 
 def save(doc: Document, out_path: Path | str) -> Path:
-    """Save document. Refuses to overwrite the template itself."""
+    """Save document. Refuses to overwrite the template itself.
+
+    Also sets `<w:updateFields val="true"/>` so Word prompts to refresh
+    fields (TOC, STYLEREF, SEQ for figure/table captions, etc.) on open —
+    otherwise field codes display their cached placeholder text until F9.
+    """
     out = Path(out_path).expanduser().resolve()
     template = _resolve_template_path(None) if _can_resolve_template() else None
     if template is not None and out == template.resolve():
@@ -97,6 +104,7 @@ def save(doc: Document, out_path: Path | str) -> Path:
             f"Refusing to overwrite the template at {template}. "
             "Pass a different out_path."
         )
+    enable_update_fields_on_open(doc)
     out.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(out))
     return out
@@ -314,15 +322,31 @@ def add_figure(
 ) -> Paragraph:
     """Insert a figure and its caption.
 
-    The figure occupies a `图片`-styled paragraph; the caption appears below
-    in a `Caption`-styled paragraph reading e.g. "图 X.Y label  caption".
+    The figure occupies a `图片`-styled paragraph; the caption is a
+    `Caption`-styled paragraph below it.
+
+    Numbering:
+    * `label=None` (default) → caption is auto-numbered via Word field codes,
+      producing "图 N.M  caption" where N = current chapter number (via
+      STYLEREF Heading 1) and M = per-chapter figure counter (via SEQ 图).
+      Word displays a placeholder until F9 refreshes the fields.
+    * `label="图 X-Y"` (or anything) → literal prefix, no field codes.
+      Use this only for special cases (appendix figures with manual labels,
+      front-matter illustrations, etc.) where auto-numbering is undesirable.
     """
     img_p = doc.add_paragraph(style=S.FIGURE_PARAGRAPH)
     run = img_p.add_run()
     run.add_picture(str(image_path), width=Cm(width_cm))
 
-    text = f"{label}  {caption}" if label else caption
-    cap_p = doc.add_paragraph(text, style=S.FIG_CAPTION)
+    cap_p = doc.add_paragraph(style=S.FIG_CAPTION)
+    if label:
+        cap_p.add_run(f"{label}  {caption}")
+    else:
+        cap_p.add_run("图 ")
+        add_field_run(cap_p, "STYLEREF 1 \\s", placeholder="1")
+        cap_p.add_run(".")
+        add_field_run(cap_p, "SEQ 图 \\* ARABIC \\s 1", placeholder="1")
+        cap_p.add_run(f"  {caption}")
     return cap_p
 
 
@@ -338,9 +362,22 @@ def add_three_line_table(
     *,
     label: Optional[str] = None,
 ) -> Table:
-    """Build a 三线表-styled table with its caption above (表-题注)."""
-    cap_text = f"{label}  {caption}" if label else caption
-    doc.add_paragraph(cap_text, style=S.TABLE_CAPTION)
+    """Build a 三线表-styled table with its caption above (表-题注).
+
+    Numbering: same convention as `add_figure`.
+    * `label=None` → caption auto-numbered as "表 N.M  caption" via Word
+      field codes (STYLEREF Heading 1 + SEQ 表). User presses F9 to refresh.
+    * `label="表 X-Y"` → literal prefix, no field codes.
+    """
+    cap_p = doc.add_paragraph(style=S.TABLE_CAPTION)
+    if label:
+        cap_p.add_run(f"{label}  {caption}")
+    else:
+        cap_p.add_run("表 ")
+        add_field_run(cap_p, "STYLEREF 1 \\s", placeholder="1")
+        cap_p.add_run(".")
+        add_field_run(cap_p, "SEQ 表 \\* ARABIC \\s 1", placeholder="1")
+        cap_p.add_run(f"  {caption}")
 
     ncols = len(header)
     table = doc.add_table(rows=1 + len(rows), cols=ncols)
@@ -437,6 +474,17 @@ def add_reference(doc: Document, entry: str) -> Paragraph:
 
     Entries should already be formatted per GB/T 7714—2015; this skill does
     not parse BibTeX (see references/known-limitations.md).
+
+    Auto-numbering note: the `参考文献` style auto-numbers as **"[N]"**, same
+    trap as `add_body_chapter` and `add_appendix_heading`. Pass only the
+    citation body; do NOT prefix "[1] " yourself or Word renders "[1] [1] ...".
+
+    ❌  add_reference(doc, "[1] 葛凌生. 产业链的多元化...")
+    ✅  add_reference(doc, "葛凌生. 产业链的多元化...")
+
+    Append references in citation order (first-cited first); Word numbers
+    them in document order, so the in-text [N] citations only line up if you
+    append in the same order.
     """
     return doc.add_paragraph(entry, style=S.REFERENCE)
 

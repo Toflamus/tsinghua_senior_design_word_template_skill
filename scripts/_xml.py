@@ -99,3 +99,75 @@ def set_table_cell_text(cell, text: str, *, keep_style: bool = True) -> None:
     for p in cell.paragraphs[1:]:
         p._p.getparent().remove(p._p)
     replace_paragraph_text(first, text)
+
+
+def enable_update_fields_on_open(doc: Document) -> None:
+    """Set `<w:updateFields val="true"/>` in settings.xml so Word auto-prompts
+    to refresh all fields (TOC, STYLEREF, SEQ, etc.) on first open.
+
+    Without this, field codes show their cached placeholder text until the
+    user presses F9 — so "图 1.1" might read "图 ?.?" or "图 1.1" depending
+    on the placeholder used in `add_field_run`. With this setting, Word
+    displays a banner ("This document contains fields that may refer to
+    other files. Do you want to update the fields?") on open; clicking Yes
+    refreshes everything.
+    """
+    settings = doc.settings.element
+    upd = settings.find(W("updateFields"))
+    if upd is None:
+        upd = OxmlElement("w:updateFields")
+        settings.append(upd)
+    upd.set(W("val"), "true")
+
+
+def add_field_run(paragraph: Paragraph, instr_text: str, *, placeholder: str = "1") -> None:
+    """Append a complete Word field code to `paragraph`.
+
+    Constructs the 4-element OOXML sequence Word uses for a field:
+
+        <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> {instr_text} </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+        <w:r><w:t>{placeholder}</w:t></w:r>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r>
+
+    `placeholder` is the cached text shown until the user presses F9 in Word
+    to refresh fields. Pick something visually plausible (e.g. "1").
+
+    Used for the Tsinghua template's caption auto-numbering pattern:
+
+        STYLEREF 1 \\s          → outputs current chapter number
+        SEQ 图 \\* ARABIC \\s 1 → outputs per-chapter figure counter
+        SEQ 表 \\* ARABIC \\s 1 → outputs per-chapter table counter
+    """
+    # begin
+    r1 = OxmlElement("w:r")
+    fld1 = OxmlElement("w:fldChar")
+    fld1.set(W("fldCharType"), "begin")
+    r1.append(fld1)
+    paragraph._p.append(r1)
+    # instrText (note: leading + trailing space so Word parses keyword cleanly)
+    r2 = OxmlElement("w:r")
+    instr = OxmlElement("w:instrText")
+    instr.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+    instr.text = f" {instr_text.strip()} "
+    r2.append(instr)
+    paragraph._p.append(r2)
+    # separate
+    r3 = OxmlElement("w:r")
+    fld3 = OxmlElement("w:fldChar")
+    fld3.set(W("fldCharType"), "separate")
+    r3.append(fld3)
+    paragraph._p.append(r3)
+    # placeholder text
+    r4 = OxmlElement("w:r")
+    t = OxmlElement("w:t")
+    t.text = placeholder
+    r4.append(t)
+    paragraph._p.append(r4)
+    # end
+    r5 = OxmlElement("w:r")
+    fld5 = OxmlElement("w:fldChar")
+    fld5.set(W("fldCharType"), "end")
+    r5.append(fld5)
+    paragraph._p.append(r5)

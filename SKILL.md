@@ -108,6 +108,13 @@ ins(h.add_appendix_heading, "初始约束", level=2)        # ✅ "A.1 初始约
 ins(h.add_appendix_heading, "1. 初始约束", level=2)     # ❌ "A.1 1. 初始约束"
 ```
 
+**Reference entries have the same trap too.** The `参考文献` style auto-numbers as "[N]" in document order. Pass only the citation body; Word numbers it. Append entries in citation order so the in-text "[N]" citations align with the reference list:
+
+```python
+ins(h.add_reference, "葛凌生. 产业链的多元化和高端化推动...")        # ✅ "[1] 葛凌生..."
+ins(h.add_reference, "[1] 葛凌生. 产业链的多元化和高端化推动...")   # ❌ "[1] [1] 葛凌生..."
+```
+
 ## Anchored insertion (avoid appending past the back matter)
 
 The template's back matter (参考文献 → 附录 → 致谢 → 声明 → 在学期间研究成果 → 训练记录表) lives at the *end* of the doc. Plain `doc.add_paragraph` appends past the back matter — your body chapters end up after 综合论文训练记录表, which is wrong.
