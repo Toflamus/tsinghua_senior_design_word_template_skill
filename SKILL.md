@@ -63,22 +63,79 @@ h.set_abstract(
     en_text="This paper studies...\nSecond paragraph...",
     en_keywords=["production scheduling", "MILP", "Pyomo"],
 )
-h.add_chapter(doc, "引言")
-h.add_section(doc, "研究背景", level=2)
-h.add_body(doc, "聚烯烃生产是石化行业重要的中间产品环节……")
-h.add_equation(doc, r"\min_{x \in X} c^T x", label="(1-1)")
-h.add_reference(doc, "竺可桢. 物理学[M]. 北京: 科学出版社, 1973: 56-60.")
+h.clear_example_body(doc)                                # wipe template's sample body
+anchor = h.find_chapter_anchor(doc, "参考文献", style="Title")
+ins = h.AnchorInserter(doc, anchor)                      # insert before 参考文献
+
+ins(h.add_body_chapter, "引言")                          # Heading 1; Word adds "第 1 章"
+ins(h.add_section, "研究背景", level=2)                  # Heading 2; Word adds "1.1"
+ins(h.add_body, "聚烯烃生产是石化行业重要的中间产品环节……")
+ins(h.add_equation, r"\min_{x \in X} c^T x", label="(1-1)")
 h.save(doc, "thesis_draft.docx")
 ```
 
-After saving, **open the `.docx` in Word/WPS and press F9** to refresh 插图清单/附表清单 fields.
+After saving, **open the `.docx` in Word/WPS and press F9** to refresh 目录/插图清单/附表清单 fields.
+
+## Critical: heading style ≠ chapter title style
+
+The Tsinghua template uses **three different styles** for chapter-level headings — picking the wrong one breaks Word's auto-numbering and produces duplicated numbers like "第 2 章 2. 建模分析":
+
+| Section | Style | Helper | Auto-numbered? |
+|---|---|---|---|
+| 摘要 / Abstract / 插图清单 / 附表清单 / 符号缩略语 / 综合论文训练记录表 | `章标题-无级别` | `add_chapter` | No |
+| 引言 / 第 N 章（正文章节）| `Heading 1` | `add_body_chapter` | **Yes** — Word prefixes "第 N 章" |
+| 参考文献 / 致谢 / 声明 / 在学期间研究成果 | `Title` | (template default — don't append) | No |
+
+**Never** prefix the heading text with the chapter number yourself. Word will add it. Write:
+
+```python
+ins(h.add_body_chapter, "建模分析")          # ✅ renders as "第 2 章 建模分析"
+ins(h.add_body_chapter, "第 2 章 建模分析")  # ❌ renders as "第 2 章 第 2 章 建模分析"
+
+ins(h.add_section, "聚烯烃排产问题描述", level=2)   # ✅ renders as "2.1 聚烯烃..."
+ins(h.add_section, "2.1 聚烯烃排产问题描述", level=2)  # ❌ duplicated number prefix
+```
+
+The same rule applies to `add_section(level=2/3/4)` — Word auto-numbers as N.M / N.M.K / N.M.K.L.
+
+**Appendix headings have the same trap.** `附录标题` auto-numbers as "附录 X", `附录标题 2/3` as "X.N" / "X.N.M". Only `附录标题 1` is *not* auto-numbered. Pass only the title text on the auto-numbered levels:
+
+```python
+ins(h.add_appendix_heading, "序列式 MILP 基准模型", level=0)         # ✅ "附录 A 序列式..."
+ins(h.add_appendix_heading, "附录 A 序列式 MILP 基准模型", level=0)  # ❌ "附录 A 附录 A 序列式..."
+
+ins(h.add_appendix_heading, "初始约束", level=2)        # ✅ "A.1 初始约束"
+ins(h.add_appendix_heading, "1. 初始约束", level=2)     # ❌ "A.1 1. 初始约束"
+```
+
+## Anchored insertion (avoid appending past the back matter)
+
+The template's back matter (参考文献 → 附录 → 致谢 → 声明 → 在学期间研究成果 → 训练记录表) lives at the *end* of the doc. Plain `doc.add_paragraph` appends past the back matter — your body chapters end up after 综合论文训练记录表, which is wrong.
+
+Use `AnchorInserter` to insert before the references section instead, after first calling `clear_example_body` to remove the template's sample 引言/图表示例 chapters:
+
+```python
+h.clear_example_body(doc)
+anchor = h.find_chapter_anchor(doc, "参考文献", style="Title")
+ins = h.AnchorInserter(doc, anchor)
+ins(h.add_body_chapter, "引言")
+ins(h.add_body_chapter, "建模分析")
+ins(h.add_section, "聚烯烃排产问题描述", level=2)
+ins(h.add_figure, "fig.png", caption="...", label="图 2-1")  # 2 paragraphs, moved together
+ins(h.add_equation, r"E = mc^2", label="(2-1)")
+```
+
+Each `ins(fn, …)` call invokes `fn(doc, …)` (the helper appends as usual) and then moves the just-added element(s) to immediately before the anchor — preserving order across calls and grouping multi-paragraph adds (figure = image + caption) together.
 
 ## Style cheat sheet
 
 | Content | Helper | Underlying style |
 |---|---|---|
-| Chapter title (引言/摘要/第N章/参考文献) | `add_chapter` | `章标题-无级别` |
-| Section heading (1.1) | `add_section(..., level=2)` | `Heading 2` |
+| **Body chapter** (引言, 第 N 章) — text is **just** the chapter name | `add_body_chapter` | `Heading 1` |
+| **Front-matter chapter** (摘要, Abstract, 插图清单, 附表清单, 符号缩略语, 综合论文训练记录表) | `add_chapter` | `章标题-无级别` |
+| **Back-matter chapter** (参考文献, 致谢, 声明, 在学期间研究成果) — *use template defaults* | (do not append) | `Title` |
+| Section heading §N.M — text is **just** the section name | `add_section(..., level=2)` | `Heading 2` |
+| Subsection §N.M.K | `add_section(..., level=3)` | `Heading 3` |
 | Body paragraph | `add_body` | `论文正文段落` |
 | Figure | `add_figure` | `图片` + `Caption` |
 | 三线表 with caption | `add_three_line_table` | `表-题注` + `三线表` |
@@ -102,7 +159,8 @@ All in `scripts/helpers.py`:
 - `save(doc, out_path) -> Path`
 - `set_cover_info(doc, *, title_cn, author, department, major, advisor, date)`
 - `set_abstract(doc, *, cn_text, cn_keywords, en_text, en_keywords)`
-- `add_chapter(doc, title) -> Paragraph`
+- `add_chapter(doc, title) -> Paragraph` — front-matter chapter (`章标题-无级别`)
+- `add_body_chapter(doc, title) -> Paragraph` — body chapter (`Heading 1`, auto-numbered)
 - `add_section(doc, title, level=1) -> Paragraph`
 - `add_body(doc, text) -> Paragraph`
 - `add_figure(doc, image_path, caption, *, width_cm=12.0, label=None) -> Paragraph`
@@ -115,6 +173,9 @@ All in `scripts/helpers.py`:
 - `add_appendix_heading(doc, title, level=0) -> Paragraph`
 - `add_symbols_table(doc, rows: list[(symbol, desc)])`
 - `insert_toc_placeholder(doc, kind: "figures"|"tables")`
+- `AnchorInserter(doc, anchor)` — class; `ins(fn, *args, **kw)` inserts before `anchor`
+- `find_chapter_anchor(doc, contains, *, style=None) -> Paragraph`
+- `clear_example_body(doc) -> None` — wipe template's sample 引言/图表示例 chapters
 
 ## Hard limitations
 

@@ -4,15 +4,36 @@ Quick lookup: "I have content of type X — which helper / style do I use?"
 
 ## I have a heading
 
+Which kind of chapter / section is it?
+
 ```
-Is it the chapter title of an unnumbered front/back section (摘要, Abstract, 引言, 参考文献, 致谢)?
-├─ YES  → add_chapter(doc, "...")              [style: 章标题-无级别]
-└─ NO   → numbered chapter "第 N 章 标题"?
-          ├─ YES  → add_section(doc, "...", level=1)   [Heading 1]
-          ├─ Section like "1.1"   → add_section(level=2)
-          ├─ Subsection "1.1.1"   → add_section(level=3)
-          └─ Sub-subsection "1.1.1.1" → add_section(level=4)
+Front-matter chapter? (摘要 / Abstract / 插图清单 / 附表清单 /
+                       符号和缩略语说明 / 综合论文训练记录表)
+├─ YES → add_chapter(doc, "...")                      [style: 章标题-无级别]
+│         (NOT auto-numbered; do not prefix any number in text)
+│
+Back-matter chapter? (参考文献 / 致谢 / 声明 / 在学期间研究成果)
+├─ YES → DO NOT add — template ships these as Title-styled headings.
+│         Just write content under the existing anchors. Use
+│         find_chapter_anchor(doc, "参考文献", style="Title") if you
+│         need to position other content relative to them.
+│
+Body chapter? (引言 OR 第 N 章 主体章节)
+├─ YES → add_body_chapter(doc, "建模分析")            [style: Heading 1]
+│         Pass *only* the chapter name. Word auto-prefixes "第 N 章".
+│         ❌ "第 2 章 建模分析"   → renders "第 2 章 第 2 章 建模分析"
+│         ✅ "建模分析"           → renders "第 2 章 建模分析"
+│
+Section §N.M?    → add_section(doc, "聚烯烃排产问题描述", level=2)  [Heading 2]
+Subsection §N.M.K? → add_section(doc, "生产系统", level=3)         [Heading 3]
+Deeper §N.M.K.L? → add_section(doc, "...", level=4)               [Heading 4]
+         (Same rule: pass only the name, Word auto-numbers.)
 ```
+
+If your new chapters are landing AFTER the back matter (参考文献 / 致谢 / 训练记录表),
+you're using bare `add_*` instead of anchored insertion. See SKILL.md §"Anchored
+insertion" — use `clear_example_body(doc)` then wrap your calls in
+`AnchorInserter(doc, find_chapter_anchor(doc, "参考文献", style="Title"))`.
 
 ## I have body text
 

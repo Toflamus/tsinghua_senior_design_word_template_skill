@@ -260,12 +260,37 @@ def _replace_abstract_section(
 # ---------------------------------------------------------------------------
 
 def add_chapter(doc: Document, title: str) -> Paragraph:
-    """Append a chapter title using `章标题-无级别`. Use for 引言, 第 N 章, 结论."""
+    """Append a *front-matter* chapter title (style `章标题-无级别`).
+
+    Use for: 摘要, Abstract, 插图清单, 附表清单, 符号和缩略语说明,
+    综合论文训练记录表. These are not auto-numbered by Word.
+
+    For body chapters (引言 / 第 N 章) use `add_body_chapter` instead so that
+    Word's outline numbering produces "第 1 章 引言" automatically.
+    For back-matter chapters (参考文献 / 致谢 / 声明 / 在学期间研究成果) the
+    template already has Title-styled headings; do not add new ones.
+    """
     return doc.add_paragraph(title, style=S.CHAPTER_TITLE)
 
 
+def add_body_chapter(doc: Document, title: str) -> Paragraph:
+    """Append a *body* chapter title (style `Heading 1`).
+
+    Use for 引言 and 第 N 章. Pass only the chapter name (e.g. "引言",
+    "建模分析") — Word's auto-numbering adds the "第 N 章" prefix. Prefixing
+    the text yourself produces duplicated numbering like "第 2 章 2. 建模...".
+    """
+    return doc.add_paragraph(title, style=S.HEADING_1)
+
+
 def add_section(doc: Document, title: str, level: Literal[1, 2, 3, 4] = 1) -> Paragraph:
-    """Append a section heading. level 1..4 → Heading 1..4."""
+    """Append a section heading. level 1..4 → Heading 1..4.
+
+    Pass only the section name (e.g. "聚烯烃排产问题描述"); Word auto-numbers
+    Heading 2/3/4 as N.M, N.M.K, N.M.K.L within the enclosing body chapter.
+    Note: `level=1` is equivalent to `add_body_chapter` and is the right
+    choice when this section starts a new chapter.
+    """
     style_name = {1: S.HEADING_1, 2: S.HEADING_2, 3: S.HEADING_3, 4: S.HEADING_4}[level]
     return doc.add_paragraph(title, style=style_name)
 
@@ -421,7 +446,22 @@ def add_appendix_heading(
     title: str,
     level: Literal[0, 1, 2, 3] = 0,
 ) -> Paragraph:
-    """Append `附录标题` (level=0) or `附录标题 1/2/3`."""
+    """Append `附录标题` (level=0) or `附录标题 1/2/3`.
+
+    Auto-numbering note — same caveat as `add_body_chapter`:
+
+    * `附录标题`   (level=0) — Word auto-numbers as **"附录 X"**.
+    * `附录标题 1` (level=1) — NOT auto-numbered; pass the full text.
+    * `附录标题 2` (level=2) — auto-numbered as **"X.N"**.
+    * `附录标题 3` (level=3) — auto-numbered as **"X.N.M"**.
+
+    For auto-numbered levels (0/2/3) pass ONLY the title text; do not prefix
+    "附录 X " or "N. " yourself. Otherwise Word produces duplicated labels
+    like "附录 A 附录 A 序列式 MILP 基准模型" or "1. 1. 初始约束".
+
+    ❌  add_appendix_heading(doc, "附录 A 序列式 MILP 基准模型", level=0)
+    ✅  add_appendix_heading(doc, "序列式 MILP 基准模型", level=0)
+    """
     style_name = {
         0: S.APPENDIX_HEADING_0,
         1: S.APPENDIX_HEADING_1,
@@ -470,3 +510,123 @@ def insert_toc_placeholder(
         style=S.NORMAL,
     )
     return heading
+
+
+# ---------------------------------------------------------------------------
+# Anchored insertion: put new content into the *body* of the template
+# instead of appending past the back matter.
+# ---------------------------------------------------------------------------
+#
+# The default python-docx semantics is "append" — every helper above adds
+# its paragraph(s) at the end of the document. But the template already has
+# back matter (参考文献 / 致谢 / 声明 / 在学期间研究成果 / 训练记录表) at the
+# end, so plain appending puts your body chapters *after* the back matter.
+#
+# `AnchorInserter` wraps any append-style helper call so the just-added
+# elements are immediately moved to right before a fixed anchor element
+# (usually the 参考文献 Title paragraph). After clearing the template's
+# example body chapters with `clear_example_body`, you get the correct
+# Tsinghua layout:
+#
+#   [cover → 摘要 → ... → 符号缩略语]  (template defaults, untouched)
+#   [your body chapters]                (added via AnchorInserter)
+#   [参考文献 → 附录 → 致谢 → ...]      (template defaults, untouched)
+#
+# IMPLEMENTATION NOTE: we compare lxml elements with `==` (which checks
+# underlying C-node identity), not `id()` — Python wrapper objects returned
+# by `iterchildren()` are not stable across calls, so id-based set diff
+# silently classifies *every* element as "new" and scrambles the document.
+
+
+class AnchorInserter:
+    """Call append-style helpers, then move added elements before an anchor.
+
+    Usage::
+
+        from scripts import helpers as h
+
+        doc = h.open_template()
+        h.clear_example_body(doc)
+        anchor = h.find_chapter_anchor(doc, "参考文献", style="Title")
+        ins = h.AnchorInserter(doc, anchor)
+
+        ins(h.add_body_chapter, "引言")
+        ins(h.add_body_chapter, "建模分析")
+        ins(h.add_section, "聚烯烃排产问题描述", level=2)
+        ins(h.add_body, "本文研究 ...")
+        ins(h.add_figure, "fig.png", caption="...", label="图 2-1")
+        ins(h.add_equation, r"E = mc^2", label="(2-1)")
+
+        h.save(doc, "thesis.docx")
+    """
+
+    def __init__(self, doc: Document, anchor_element) -> None:
+        self.doc = doc
+        # Accept either a Paragraph wrapper or a raw lxml element.
+        self.anchor = getattr(anchor_element, "_element", anchor_element)
+        self.body = doc.element.body
+
+    def __call__(self, fn, *args, **kwargs):
+        # Snapshot existing children. Use == comparison (lxml element identity),
+        # NOT id() — Python wrappers from iterchildren() are not stable.
+        before = list(self.body.iterchildren())
+        result = fn(self.doc, *args, **kwargs)
+        new_elements = [c for c in self.body.iterchildren() if c not in before]
+        for el in new_elements:
+            self.anchor.addprevious(el)
+        return result
+
+
+def find_chapter_anchor(
+    doc: Document,
+    contains: str,
+    *,
+    style: Optional[str] = None,
+) -> Paragraph:
+    """Return the first paragraph whose text contains `contains` and (optionally) matches `style`.
+
+    Common back-matter anchors in the Tsinghua template:
+
+        find_chapter_anchor(doc, "参考文献", style="Title")
+        find_chapter_anchor(doc, "致谢", style="Title")
+        find_chapter_anchor(doc, "声明", style="Title")
+        find_chapter_anchor(doc, "在学期间", style="Title")
+        find_chapter_anchor(doc, "综合论文训练记录表", style="章标题-无级别")
+
+    Raises:
+        RuntimeError: no paragraph matches.
+    """
+    for p in doc.paragraphs:
+        if contains in p.text and (style is None or (p.style and p.style.name == style)):
+            return p
+    crit = f"text contains {contains!r}" + (f", style={style!r}" if style else "")
+    raise RuntimeError(f"find_chapter_anchor: no paragraph matched ({crit})")
+
+
+def clear_example_body(doc: Document) -> None:
+    """Remove the template's example body chapters (引言 + 图表示例).
+
+    The official template ships with two sample Heading-1 chapters
+    ("引    言" and "图、表及表达式示例") plus their sample subsections, body
+    text, figure/table/equation examples. This helper wipes the range from
+    the first body Heading 1 up to (but not including) the 参考文献 Title,
+    leaving the cover/abstract/lists/symbols section before and the back
+    matter after intact.
+
+    Idempotent: re-running on an already-cleared doc is a no-op (the loop
+    walks zero elements).
+    """
+    intro = None
+    for p in doc.paragraphs:
+        if p.style and p.style.name == S.HEADING_1:
+            intro = p
+            break
+    if intro is None:
+        return  # already cleared, or no body chapters to begin with
+    ref = find_chapter_anchor(doc, "参考文献", style=S.TITLE)
+    parent = intro._element.getparent()
+    el = intro._element
+    while el is not None and el is not ref._element:
+        nxt = el.getnext()
+        parent.remove(el)
+        el = nxt

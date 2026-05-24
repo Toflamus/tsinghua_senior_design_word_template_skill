@@ -5,12 +5,20 @@ version), update only this file and helpers will pick it up.
 """
 
 # --- Headings ---
-CHAPTER_TITLE = "章标题-无级别"      # 章标题 (also used for 摘要/Abstract/参考文献/插图清单 etc.)
-HEADING_1 = "Heading 1"            # 引言 / 第 X 章 (when numbered)
-HEADING_2 = "Heading 2"            # 1.1
-HEADING_3 = "Heading 3"            # 1.1.1
-HEADING_4 = "Heading 4"            # 1.1.1.1
-TITLE = "Title"                    # 致谢/声明/在学期间研究成果
+# NOTE: chapter-level styles in the Tsinghua template fall into 3 buckets.
+# Pick the one matching your *section's* role:
+#
+#   章标题-无级别   摘要 / Abstract / 插图清单 / 附表清单 / 符号和缩略语说明
+#                    / 综合论文训练记录表  (front matter; NOT auto-numbered)
+#   Heading 1       引言 / 第 N 章 *body chapters*  (Word auto-numbers as
+#                    "第 N 章" — DO NOT prefix the heading text yourself)
+#   Title           参考文献 / 致谢 / 声明 / 在学期间研究成果  (back matter)
+CHAPTER_TITLE = "章标题-无级别"      # front-matter chapter title (see note)
+HEADING_1 = "Heading 1"            # body chapter — text is just chapter name
+HEADING_2 = "Heading 2"            # §1.1 — text is just section name
+HEADING_3 = "Heading 3"            # §1.1.1
+HEADING_4 = "Heading 4"            # §1.1.1.1
+TITLE = "Title"                    # back-matter chapter title (参考文献 etc.)
 
 # --- Body ---
 BODY = "论文正文段落"              # 推荐的正文样式
