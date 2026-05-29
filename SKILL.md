@@ -183,6 +183,7 @@ All in `scripts/helpers.py`:
 - `AnchorInserter(doc, anchor)` — class; `ins(fn, *args, **kw)` inserts before `anchor`
 - `find_chapter_anchor(doc, contains, *, style=None) -> Paragraph`
 - `clear_example_body(doc) -> None` — wipe template's sample 引言/图表示例 chapters
+- `renumber_caption_fields(doc, *, appendix_heading_style=None) -> None` — bake correct "图 N.M"/"表 N.M" into caption field caches so they display right without F9
 
 ## Hard limitations
 

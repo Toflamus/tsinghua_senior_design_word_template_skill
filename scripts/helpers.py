@@ -37,6 +37,7 @@ from ._xml import (
     append_omml,
     add_field_run,
     enable_update_fields_on_open,
+    set_caption_field_cache,
 )
 
 
@@ -558,6 +559,59 @@ def insert_toc_placeholder(
         style=S.NORMAL,
     )
     return heading
+
+
+def renumber_caption_fields(
+    doc: Document,
+    *,
+    body_heading_style: str = "Heading 1",
+    appendix_heading_style: Optional[str] = None,
+) -> None:
+    """Bake correct "N.M" numbers into every figure/table caption's field cache.
+
+    Captions created by `add_figure`/`add_three_line_table` (with label=None)
+    carry STYLEREF + SEQ field codes whose *displayed* value is a cached "1"
+    until Word refreshes fields (F9). Until then every caption — and the
+    插图清单/附表清单 that aggregate them — reads "图 1.1" / "表 1.1".
+
+    This walks the document in order, tracks the current chapter, and rewrites
+    each caption's two cached values so the document reads correctly *without*
+    a refresh:
+
+    * paragraphs styled `body_heading_style` (default "Heading 1") advance a
+      numeric chapter counter (1, 2, 3, …);
+    * paragraphs styled `appendix_heading_style` (e.g. "附录标题") advance a
+      letter chapter label (A, B, C, …);
+    * figure (`Caption`) and table (`表-题注`) counters reset at each chapter.
+
+    The STYLEREF/SEQ field codes remain intact, so an F9 refresh in Word still
+    recomputes everything (and the 插图清单/附表清单 TOC fields, which always
+    need one refresh to rebuild their entries).
+
+    Pass `appendix_heading_style="附录标题"` for an appendix-only document so
+    captions are numbered "图 A.1" etc.
+    """
+    chap_num = 0
+    appendix_idx = -1
+    fig_n = 0
+    tab_n = 0
+    cur_label = "1"
+    for p in doc.paragraphs:
+        s = p.style.name if p.style else ""
+        if s == body_heading_style:
+            chap_num += 1
+            cur_label = str(chap_num)
+            fig_n = tab_n = 0
+        elif appendix_heading_style is not None and s == appendix_heading_style:
+            appendix_idx += 1
+            cur_label = chr(ord("A") + appendix_idx)
+            fig_n = tab_n = 0
+        elif s == S.FIG_CAPTION:
+            fig_n += 1
+            set_caption_field_cache(p, cur_label, fig_n)
+        elif s == S.TABLE_CAPTION:
+            tab_n += 1
+            set_caption_field_cache(p, cur_label, tab_n)
 
 
 # ---------------------------------------------------------------------------

@@ -171,3 +171,32 @@ def add_field_run(paragraph: Paragraph, instr_text: str, *, placeholder: str = "
     fld5.set(W("fldCharType"), "end")
     r5.append(fld5)
     paragraph._p.append(r5)
+
+
+def set_caption_field_cache(paragraph: Paragraph, chapter_label: str, seq_no: int) -> None:
+    """Rewrite the cached values of a caption paragraph's two field codes.
+
+    A caption built by `add_figure`/`add_three_line_table` (with label=None)
+    contains two fields: STYLEREF (chapter number) then SEQ (per-chapter
+    counter). Each field caches a displayed value in the `<w:t>` run that
+    immediately follows its 'separate' fldChar. This overwrites those two
+    cached values with `chapter_label` and `seq_no` respectively, so the
+    caption reads e.g. "图 2.1" / "表 A.3" *without* requiring an F9 refresh.
+
+    No-op if the paragraph doesn't contain two such fields.
+    """
+    cached_ts = []
+    expect = False
+    for r in paragraph._p.findall(W("r")):
+        fld = r.find(W("fldChar"))
+        if fld is not None:
+            expect = fld.get(W("fldCharType")) == "separate"
+            continue
+        if expect:
+            t = r.find(W("t"))
+            if t is not None:
+                cached_ts.append(t)
+            expect = False
+    if len(cached_ts) >= 2:
+        cached_ts[0].text = str(chapter_label)
+        cached_ts[1].text = str(seq_no)
