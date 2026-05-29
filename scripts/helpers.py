@@ -17,6 +17,7 @@ TOC fields.
 """
 from __future__ import annotations
 import os
+import re
 from pathlib import Path
 from typing import Literal, Optional, Sequence
 
@@ -406,18 +407,38 @@ def add_equation(
     latex: str,
     *,
     label: Optional[str] = None,
+    on_error: Literal["raise", "text"] = "raise",
 ) -> Paragraph:
     """Insert a display equation as native Word OMML, styled `公式`.
 
     `label` (e.g. "(2-3)") is appended as trailing text in the same paragraph
     so it shows on the right; you can use Word's tab stops to right-align it.
 
+    `\\atop` (plain-TeX stacking, common in GDP disjunction blocks) is rewritten
+    to \\substack automatically so pandoc can convert it.
+
+    on_error:
+      * "raise" (default) — propagate ValueError/RuntimeError if pandoc can't
+        convert the LaTeX (preserves the strict contract).
+      * "text" — on failure, emit a 公式-styled paragraph containing the raw
+        LaTeX as text instead of crashing. Useful when bulk-assembling many
+        equations where one exotic macro shouldn't abort the whole document.
+
     Requires pandoc on PATH. Raises RuntimeError with install hint if absent.
     """
     from ._equation import latex_to_omml
 
+    try:
+        omaths = latex_to_omml(latex, display=True)
+    except Exception:
+        if on_error == "text":
+            p = doc.add_paragraph(style=S.EQUATION)
+            p.add_run(latex + ("\t" + label if label else ""))
+            return p
+        raise
+
     p = doc.add_paragraph(style=S.EQUATION)
-    for omath in latex_to_omml(latex, display=True):
+    for omath in omaths:
         append_omml(p, omath)
     if label:
         # tab + label for right-alignment if user has set a right tab stop
@@ -431,6 +452,61 @@ def add_inline_equation(paragraph: Paragraph, latex: str) -> None:
 
     for omath in latex_to_omml(latex, display=False):
         append_omml(paragraph, omath)
+
+
+# --- Markdown-ish inline markup → styled runs --------------------------------
+
+_RICH_TOKEN_RE = re.compile(
+    r"\$(?P<m1>[^$\n]+?)\$"
+    r"|\\\((?P<m2>[^\n]+?)\\\)"
+    r"|\*\*(?P<bold>[^*\n]+?)\*\*"
+    r"|`(?P<code>[^`\n]+?)`"
+)
+_RICH_MATH_ONLY_RE = re.compile(r"(\$[^$\n]+?\$|\\\([^\n]+?\\\))")
+_RICH_MATH_PICK_RE = re.compile(r"\$([^$\n]+?)\$|\\\(([^\n]+?)\\\)")
+
+
+def _render_inline_markup(paragraph: Paragraph, text: str) -> None:
+    """Render `text` into `paragraph`, converting inline markup to runs/OMML:
+    `$..$` / `\\(..\\)` → inline OMML; `**..**` → bold run (math inside it is
+    still rendered as OMML); `` `..` `` → 行内代码 character style.
+    """
+    if not any(tok in text for tok in ("$", "\\(", "**", "`")):
+        paragraph.add_run(text)
+        return
+    pos = 0
+    for m in _RICH_TOKEN_RE.finditer(text):
+        if m.start() > pos:
+            paragraph.add_run(text[pos:m.start()])
+        if m.group("m1") is not None or m.group("m2") is not None:
+            add_inline_equation(paragraph, (m.group("m1") or m.group("m2")).strip())
+        elif m.group("bold") is not None:
+            # bold may itself wrap inline math
+            for part in _RICH_MATH_ONLY_RE.split(m.group("bold")):
+                mm = _RICH_MATH_PICK_RE.fullmatch(part)
+                if mm:
+                    add_inline_equation(paragraph, (mm.group(1) or mm.group(2)).strip())
+                elif part:
+                    paragraph.add_run(part).bold = True
+        else:  # code
+            run = paragraph.add_run(m.group("code"))
+            try:
+                run.style = paragraph.part.document.styles[S.INLINE_CODE]
+            except KeyError:
+                pass
+        pos = m.end()
+    if pos < len(text):
+        paragraph.add_run(text[pos:])
+
+
+def add_rich_body(doc: Document, text: str) -> Paragraph:
+    """Like `add_body` but renders inline `$math$` / `\\(math\\)` / `**bold**`
+    / `` `code` `` markup into OMML and styled runs. Plain text with no markup
+    behaves exactly like `add_body`.
+    """
+    p = doc.add_paragraph(style=S.BODY)
+    _render_inline_markup(p, text)
+    return p
 
 
 # ---------------------------------------------------------------------------

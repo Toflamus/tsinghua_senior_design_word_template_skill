@@ -3,6 +3,7 @@
 Pandoc is a system dependency. If missing, raise with an install hint.
 """
 from __future__ import annotations
+import re
 import shutil
 import subprocess
 import tempfile
@@ -20,6 +21,15 @@ _PANDOC_INSTALL_HINT = (
     "  macOS:             brew install pandoc\n"
     "  Or download from https://pandoc.org/installing.html"
 )
+
+# `\atop` is a plain-TeX primitive pandoc cannot convert to OMML. It is common
+# in GDP/disjunction notation: `\left[ Y \atop constraint \right]` stacks the
+# indicator over the constraint. Rewrite it to \substack, which pandoc handles.
+_ATOP_BRACKET_RE = re.compile(r"\\left\[\s*(.+?)\s*\\atop\s*(.+?)\s*\\right\]")
+
+
+def _preprocess_latex(latex: str) -> str:
+    return _ATOP_BRACKET_RE.sub(r"\\left[ \\substack{\1 \\\\ \2} \\right]", latex)
 
 
 def _check_pandoc() -> str:
@@ -47,6 +57,7 @@ def latex_to_omml(latex: str, *, display: bool = True) -> List[etree._Element]:
         raise ValueError("latex_to_omml: empty input")
 
     _check_pandoc()
+    latex = _preprocess_latex(latex)
     wrapped = f"$$\n{latex}\n$$\n" if display else f"${latex}$\n"
 
     with tempfile.TemporaryDirectory() as td:

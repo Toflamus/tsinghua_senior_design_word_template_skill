@@ -170,9 +170,10 @@ All in `scripts/helpers.py`:
 - `add_body_chapter(doc, title) -> Paragraph` — body chapter (`Heading 1`, auto-numbered)
 - `add_section(doc, title, level=1) -> Paragraph`
 - `add_body(doc, text) -> Paragraph`
+- `add_rich_body(doc, text) -> Paragraph` — body paragraph rendering inline `$math$`/`\(math\)`/`**bold**`/`` `code` `` markup
 - `add_figure(doc, image_path, caption, *, width_cm=12.0, label=None) -> Paragraph`
 - `add_three_line_table(doc, header, rows, caption, *, label=None) -> Table`
-- `add_equation(doc, latex, *, label=None) -> Paragraph` (display, OMML)
+- `add_equation(doc, latex, *, label=None, on_error="raise"|"text") -> Paragraph` (display, OMML; rewrites `\atop`→`\substack`; `on_error="text"` falls back to raw text instead of raising)
 - `add_inline_equation(paragraph, latex) -> None`
 - `add_code_block(doc, code, language=None) -> Paragraph`
 - `add_inline_code(paragraph, code) -> None`
