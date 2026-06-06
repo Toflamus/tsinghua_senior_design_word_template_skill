@@ -170,8 +170,9 @@ All in `scripts/helpers.py`:
 - `add_body_chapter(doc, title) -> Paragraph` — body chapter (`Heading 1`, auto-numbered)
 - `add_section(doc, title, level=1) -> Paragraph`
 - `add_body(doc, text) -> Paragraph`
-- `add_rich_body(doc, text) -> Paragraph` — body paragraph rendering inline `$math$`/`\(math\)`/`**bold**`/`` `code` `` markup
+- `add_rich_body(doc, text) -> Paragraph` — body paragraph rendering inline `$math$`/`\(math\)`/`**bold**`/`*italic*`/`` `code` `` markup
 - `add_figure(doc, image_path, caption, *, width_cm=12.0, label=None) -> Paragraph`
+- `add_stacked_figure(doc, image_groups, caption, *, row_max_width_cm=14.0, label=None) -> Paragraph` — composite figure (multiple image rows, each row side-by-side; ONE shared auto-numbered caption)
 - `add_three_line_table(doc, header, rows, caption, *, label=None) -> Table`
 - `add_equation(doc, latex, *, label=None, on_error="raise"|"text") -> Paragraph` (display, OMML; rewrites `\atop`→`\substack`; `on_error="text"` falls back to raw text instead of raising)
 - `add_inline_equation(paragraph, latex) -> None`
@@ -184,7 +185,12 @@ All in `scripts/helpers.py`:
 - `AnchorInserter(doc, anchor)` — class; `ins(fn, *args, **kw)` inserts before `anchor`
 - `find_chapter_anchor(doc, contains, *, style=None) -> Paragraph`
 - `clear_example_body(doc) -> None` — wipe template's sample 引言/图表示例 chapters
+- `clear_template_instruction_textboxes(doc) -> None` — strip the "说明…仅示例…阅后删除此框" instruction textboxes embedded in 插图清单/附表清单/符号缩略语/在学期间 sections
 - `renumber_caption_fields(doc, *, appendix_heading_style=None) -> None` — bake correct "图 N.M"/"表 N.M" into caption field caches so they display right without F9
+- `render_inline_markup_in(doc, *, body_styles=("段落","参考文献","Caption","表-题注"), include_tables=True) -> None` — post-process scan that rebuilds run sequences in paragraphs/cells that still carry literal markdown (`$..$` / `**..**` / `*..*` / `` `..` ``). Use after `set_abstract` / `add_reference` / `add_three_line_table` if their inputs were markdown-flavoured.
+- `strip_inline_html(text) -> str` — drop common pandoc-emitted inline HTML (`<u>`/`<sup>`/`<sub>`/`<strong>`/`<em>`/`<span>`/`<font>`/`<p>`/`<br>`), keep inner text
+- `safe_image(src_path, dst_dir=None, *, max_long_edge=1600) -> Path` — re-encode an image as a clean PNG (long edge capped). Use before `add_picture`/`add_figure` when source images are huge scans or exotic PNG variants that python-docx refuses. Caches by mtime; requires Pillow.
+- `html_table_to_grid(html_str) -> list[list[str]]` — parse an HTML `<table>` (with rowspan/colspan) into a rectangular grid suitable for `add_three_line_table`. Spanned cells repeat their text.
 
 ## Hard limitations
 

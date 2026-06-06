@@ -352,6 +352,48 @@ def add_figure(
     return cap_p
 
 
+def add_stacked_figure(
+    doc: Document,
+    image_groups: Sequence[Sequence[Path | str]],
+    caption: str,
+    *,
+    row_max_width_cm: float = 14.0,
+    label: Optional[str] = None,
+) -> Paragraph:
+    """Insert a composite figure made of multiple image rows + ONE shared
+    auto-numbered caption.
+
+    `image_groups` is a list of rows; each row is a list of image paths. Each
+    row becomes its own `图片`-styled paragraph holding all of its images
+    side-by-side (`row_max_width_cm` is divided across them). Multi-row figures
+    stack vertically with one Caption below all rows.
+
+    Use this when the source document treats several distinct images as one
+    composite figure (alignment strips, side-by-side panels (a)(b)(c), etc.).
+    Numbering rules mirror `add_figure`: `label=None` → STYLEREF + SEQ field
+    codes; `label="图 X-Y"` → literal prefix.
+    """
+    if not image_groups:
+        raise ValueError("add_stacked_figure: image_groups is empty")
+    for group in image_groups:
+        img_p = doc.add_paragraph(style=S.FIGURE_PARAGRAPH)
+        per_width = row_max_width_cm / max(len(group), 1)
+        for path in group:
+            run = img_p.add_run()
+            run.add_picture(str(path), width=Cm(per_width))
+
+    cap_p = doc.add_paragraph(style=S.FIG_CAPTION)
+    if label:
+        cap_p.add_run(f"{label}  {caption}")
+    else:
+        cap_p.add_run("图 ")
+        add_field_run(cap_p, "STYLEREF 1 \\s", placeholder="1")
+        cap_p.add_run(".")
+        add_field_run(cap_p, "SEQ 图 \\* ARABIC \\s 1", placeholder="1")
+        cap_p.add_run(f"  {caption}")
+    return cap_p
+
+
 # ---------------------------------------------------------------------------
 # Floats: Three-line table
 # ---------------------------------------------------------------------------
@@ -460,18 +502,38 @@ _RICH_TOKEN_RE = re.compile(
     r"\$(?P<m1>[^$\n]+?)\$"
     r"|\\\((?P<m2>[^\n]+?)\\\)"
     r"|\*\*(?P<bold>[^*\n]+?)\*\*"
+    r"|\*(?P<italic>[^\s*][^*\n]*?)\*"
     r"|`(?P<code>[^`\n]+?)`"
 )
 _RICH_MATH_ONLY_RE = re.compile(r"(\$[^$\n]+?\$|\\\([^\n]+?\\\))")
 _RICH_MATH_PICK_RE = re.compile(r"\$([^$\n]+?)\$|\\\(([^\n]+?)\\\)")
+# Common inline HTML tags that survive pandoc and should be stripped to text.
+_INLINE_HTML_STRIP_RE = re.compile(
+    r"</?(?:u|strong|b|em|i|span|sup|sub|p|font)\b[^>]*>"
+)
+
+
+def strip_inline_html(text: str) -> str:
+    """Drop common pandoc-emitted inline HTML tags (`<u>`, `<sup>`, `<sub>`,
+    `<strong>`, `<em>`, `<span>`, `<font>`, `<p>`, `<br>`) and keep inner text.
+
+    Useful when importing pandoc-converted markdown that retained inline HTML.
+    Tag inventory matches what was observed in real Word→pandoc gfm conversions
+    of Chinese theses (with underlined runs, superscripts, etc.).
+    """
+    text = re.sub(r"<br\s*/?>", " ", text)
+    return _INLINE_HTML_STRIP_RE.sub("", text)
 
 
 def _render_inline_markup(paragraph: Paragraph, text: str) -> None:
     """Render `text` into `paragraph`, converting inline markup to runs/OMML:
-    `$..$` / `\\(..\\)` → inline OMML; `**..**` → bold run (math inside it is
-    still rendered as OMML); `` `..` `` → 行内代码 character style.
+
+    * `$..$` / `\\(..\\)`  → inline OMML
+    * `**..**`             → bold run (math nested inside is still OMML)
+    * `*..*`               → italic run
+    * `` `..` ``           → 行内代码 character style
     """
-    if not any(tok in text for tok in ("$", "\\(", "**", "`")):
+    if not any(tok in text for tok in ("$", "\\(", "*", "`")):
         paragraph.add_run(text)
         return
     pos = 0
@@ -481,13 +543,14 @@ def _render_inline_markup(paragraph: Paragraph, text: str) -> None:
         if m.group("m1") is not None or m.group("m2") is not None:
             add_inline_equation(paragraph, (m.group("m1") or m.group("m2")).strip())
         elif m.group("bold") is not None:
-            # bold may itself wrap inline math
             for part in _RICH_MATH_ONLY_RE.split(m.group("bold")):
                 mm = _RICH_MATH_PICK_RE.fullmatch(part)
                 if mm:
                     add_inline_equation(paragraph, (mm.group(1) or mm.group(2)).strip())
                 elif part:
                     paragraph.add_run(part).bold = True
+        elif m.group("italic") is not None:
+            paragraph.add_run(m.group("italic")).italic = True
         else:  # code
             run = paragraph.add_run(m.group("code"))
             try:
@@ -497,6 +560,66 @@ def _render_inline_markup(paragraph: Paragraph, text: str) -> None:
         pos = m.end()
     if pos < len(text):
         paragraph.add_run(text[pos:])
+
+
+def render_inline_markup_in(
+    doc: Document,
+    *,
+    body_styles: Sequence[str] = ("段落", "参考文献", "Caption", "表-题注"),
+    include_tables: bool = True,
+) -> None:
+    """Post-process scan: walk paragraphs whose style is in `body_styles` (plus,
+    if `include_tables`, every cell paragraph in every table), and re-render any
+    that still contain literal markdown markup (`$..$` / `\\(..\\)` / `**..**`
+    / `*..*` / `` `..` ``) by rebuilding their runs through `_render_inline_markup`.
+
+    Use this after callers that take plain strings (`set_abstract`,
+    `add_reference`, `add_three_line_table`) when the source text was carrying
+    markdown-style markup — otherwise the markup renders as literal characters.
+
+    For Caption / 表-题注 paragraphs that already have STYLEREF + SEQ field
+    codes (figure/table auto-numbering), only the *last* text run is rebuilt
+    so the field codes survive.
+    """
+    W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    caption_styles = {S.FIG_CAPTION, S.TABLE_CAPTION}
+
+    def _rebuild(p: Paragraph) -> None:
+        s = p.style.name if p.style else ""
+        if s in caption_styles:
+            # only rebuild the trailing text run; keep field codes intact
+            runs_el = p._element.findall(f"{W}r")
+            if not runs_el:
+                return
+            last = runs_el[-1]
+            t = last.find(f"{W}t")
+            if t is None or not t.text:
+                return
+            full = t.text
+            if not any(tok in full for tok in ("$", "\\(", "*", "`")):
+                return
+            last.getparent().remove(last)
+            _render_inline_markup(p, full)
+        else:
+            full = "".join(r.text or "" for r in p.runs)
+            if not any(tok in full for tok in ("$", "\\(", "*", "`")):
+                return
+            for r in list(p.runs):
+                r._element.getparent().remove(r._element)
+            _render_inline_markup(p, full)
+
+    target_set = set(body_styles)
+    for p in doc.paragraphs:
+        s = p.style.name if p.style else ""
+        if s in target_set:
+            _rebuild(p)
+    if include_tables:
+        for tbl in doc.tables:
+            for row in tbl.rows:
+                for cell in row.cells:
+                    for p in cell.paragraphs:
+                        # all cell paragraphs regardless of style
+                        _rebuild(p)
 
 
 def add_rich_body(doc: Document, text: str) -> Paragraph:
@@ -808,3 +931,48 @@ def clear_example_body(doc: Document) -> None:
         nxt = el.getnext()
         parent.remove(el)
         el = nxt
+
+
+def clear_template_instruction_textboxes(doc: Document) -> None:
+    """Strip the template's "说明…仅示例…阅后删除此框" instruction textboxes.
+
+    The Tsinghua template embeds little textboxes inside 插图清单 / 附表清单 /
+    符号缩略语说明 / 在学期间研究成果 sections, instructing the author to
+    delete them after filling in real content. They survive normal templating
+    and ship in the final docx as obvious template scaffolding.
+
+    Detection: any `<w:txbxContent>` whose text starts with "说明" OR contains
+    "阅后删除" / "仅示例" is treated as such an instruction box. The enclosing
+    drawing/AlternateContent/pict ancestor is removed, then any now-empty
+    parent run, then any now-empty parent paragraph.
+    """
+    NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    body = doc.element.body
+    targets: list = []
+    for tb in body.findall(".//w:txbxContent", NS):
+        text = "".join(t.text or "" for t in tb.findall(".//w:t", NS))
+        if text.startswith("说明") or "阅后删除" in text or "仅示例" in text:
+            top = None
+            anc = tb
+            while anc is not None:
+                tag = anc.tag.split("}")[-1]
+                if tag in ("AlternateContent", "drawing", "pict"):
+                    top = anc
+                anc = anc.getparent()
+            if top is not None:
+                targets.append(top)
+    for top in targets:
+        parent = top.getparent()
+        if parent is None:
+            continue
+        parent.remove(top)
+        # if the parent <w:r> is now empty (only rPr), drop it
+        if parent.tag.endswith("}r") and all(c.tag.endswith("}rPr") for c in parent):
+            run_parent = parent.getparent()
+            if run_parent is not None:
+                run_parent.remove(parent)
+                # if the paragraph is now empty, drop it
+                if run_parent.tag.endswith("}p") and all(c.tag.endswith("}pPr") for c in run_parent):
+                    pp = run_parent.getparent()
+                    if pp is not None:
+                        pp.remove(run_parent)
